@@ -1,391 +1,298 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, ArrowUpRight, Check, ChevronDown, GraduationCap } from "lucide-react";
-import { useRef, useState, type KeyboardEvent } from "react";
-import { profile, projects, type Project } from "@/data/portfolio";
+import { AnimatePresence, motion, useScroll, useSpring } from "motion/react";
+import { ArrowUpRight, Check, ChevronDown, Download, GraduationCap, Languages } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { chapters, profile, projects, type Project, type Track } from "@/data/portfolio";
 import { Reveal, SectionHeading } from "./reveal";
 import { useUI } from "./ui-provider";
 
-const START = 2018;
-const END = 2026;
-const years = Array.from({ length: END - START + 1 }, (_, i) => START + i);
-const span = years.length;
 const ease = [0.22, 1, 0.36, 1] as const;
+const VISIBLE_HIGHLIGHTS = 2;
 
-const roles = [...projects].sort((a, b) => b.start - a.start || b.end - a.end);
-const latestSlug = roles[0].slug;
-
-const lanes = [
-  { id: "frontend", label: "Frontend & Extensions" },
+const filters: { id: "all" | Track; label: string }[] = [
+  { id: "all", label: "All roles" },
+  { id: "frontend", label: "Frontend" },
   { id: "backend", label: "Backend" },
-] as const;
-
-const chapters = [
-  {
-    years: "2018 — 2021",
-    title: "Backend foundations",
-    body: "WordPress calculators, then Laravel ecosystems for blockchain fintech and agency operations — learning how data, money and permissions really flow.",
-  },
-  {
-    years: "2021 — 2024",
-    title: "Extension specialist",
-    body: "Moved to where users actually work: Chrome, Gmail, Thunderbird and Outlook extensions that pull recruiting and invoicing workflows into the browser.",
-  },
-  {
-    years: "2025 — Now",
-    title: "Frontend leadership",
-    body: "Leading the frontend of a multi-tenant SaaS platform — architecture, integrations, GDPR, testing and CI — while shipping MV3 tooling on the side.",
-  },
 ];
 
-function TrackBadge({ project }: { project: Project }) {
-  return (
-    <span
-      className="rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider"
-      style={{ background: `${project.accent}18`, color: project.accent }}
-    >
-      {project.track}
-    </span>
-  );
-}
+const bySlug = new Map(projects.map((p) => [p.slug, p]));
 
-function RoleDetails({ project, compact = false }: { project: Project; compact?: boolean }) {
+function RoleCard({ project, current }: { project: Project; current: boolean }) {
   const { openProject } = useUI();
+  const [open, setOpen] = useState(false);
+  const extra = project.highlights.length - VISIBLE_HIGHLIGHTS;
+  const shown = open ? project.highlights : project.highlights.slice(0, VISIBLE_HIGHLIGHTS);
+
   return (
-    <div>
-      <p className={`leading-relaxed text-white/60 ${compact ? "text-sm" : "text-base sm:text-lg"}`}>
-        {project.summary}
-      </p>
-
-      <ul className={`space-y-3 ${compact ? "mt-4" : "mt-6"}`}>
-        {project.highlights.map((h, i) => (
-          <motion.li
-            key={h}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 + i * 0.05, ease }}
-            className={`flex gap-3 text-white/75 ${compact ? "text-sm" : "text-[15px]"}`}
-          >
-            <span
-              className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-black"
-              style={{ background: project.accent }}
-            >
-              <Check className="size-3" />
-            </span>
-            <span className="leading-relaxed">{h}</span>
-          </motion.li>
-        ))}
-      </ul>
-
-      <div className={`flex flex-wrap gap-1.5 ${compact ? "mt-5" : "mt-7"}`}>
-        {project.tech.map((t) => (
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.6, ease }}
+      className="relative pl-9 sm:pl-12"
+    >
+      <span
+        aria-hidden
+        className="absolute left-[5px] top-7 size-3.5 rounded-full border-[3px] border-background sm:left-[11px]"
+        style={{ background: project.accent, boxShadow: `0 0 0 4px ${project.accent}22` }}
+      />
+      <article className="surface group relative overflow-hidden p-5 transition-colors hover:border-white/15 sm:p-7">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-20 -top-20 size-56 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-20"
+          style={{ background: project.accent }}
+        />
+        <div className="relative flex flex-wrap items-center gap-2">
+          <span className="font-mono text-xs text-white/45">{project.period}</span>
           <span
-            key={t}
-            className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs text-white/60"
+            className="rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider"
+            style={{ background: `${project.accent}18`, color: project.accent }}
           >
-            {t}
+            {project.track}
           </span>
-        ))}
-      </div>
+          {current && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent">
+              <span className="size-1.5 animate-pulse rounded-full bg-accent" /> Current
+            </span>
+          )}
+        </div>
 
-      <button
-        onClick={() => openProject(project.slug)}
-        className="group mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/5 active:scale-[0.97]"
-      >
-        Read the case study
-        <ArrowUpRight className="size-4 transition-transform group-hover:rotate-45" />
-      </button>
-    </div>
-  );
-}
+        <h3 className="relative mt-3 text-xl font-semibold tracking-tight text-white sm:text-2xl">{project.role}</h3>
+        <p className="relative font-serif text-lg italic sm:text-xl" style={{ color: project.accent }}>
+          @ {project.company}
+        </p>
+        <p className="relative mt-3 text-pretty text-sm leading-relaxed text-white/60 sm:text-base">{project.summary}</p>
 
-function CareerChart({ selected, onSelect }: { selected: string; onSelect: (slug: string) => void }) {
-  return (
-    <Reveal className="mb-6 hidden overflow-hidden rounded-3xl border border-white/[0.07] bg-ink-900 p-8 lg:block">
-      <div className="grid grid-cols-[200px_1fr] gap-6">
-        <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/30">Career timeline</div>
-        <div className="grid" style={{ gridTemplateColumns: `repeat(${span}, minmax(0, 1fr))` }}>
-          {years.map((y) => (
-            <div key={y} className="border-l border-white/5 pl-2 font-mono text-xs text-white/35">
-              {y}
-            </div>
+        <ul className="relative mt-4 space-y-2.5">
+          <AnimatePresence initial={false}>
+            {shown.map((h) => (
+              <motion.li
+                key={h}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease }}
+                className="flex gap-3 overflow-hidden text-sm text-white/75 sm:text-[15px]"
+              >
+                <span
+                  className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-black"
+                  style={{ background: project.accent }}
+                >
+                  <Check className="size-3" />
+                </span>
+                <span className="leading-relaxed">{h}</span>
+              </motion.li>
+            ))}
+          </AnimatePresence>
+        </ul>
+
+        {extra > 0 && (
+          <button
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            className="relative mt-3 inline-flex min-h-9 items-center gap-1.5 text-sm text-white/45 transition-colors hover:text-white"
+          >
+            {open ? "Show less" : `Show ${extra} more`}
+            <ChevronDown className={`size-4 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
+          </button>
+        )}
+
+        <div className="relative mt-5 flex flex-wrap gap-1.5">
+          {project.tech.map((t) => (
+            <span
+              key={t}
+              className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs text-white/60"
+            >
+              {t}
+            </span>
           ))}
         </div>
-      </div>
 
-      {lanes.map((lane) => (
-        <div key={lane.id} className="mt-5">
-          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-white/30">{lane.label}</div>
-          <div className="space-y-1.5">
-            {projects
-              .filter((p) => p.track === lane.id)
-              .map((p, i) => {
-                const left = ((p.start - START) / span) * 100;
-                const width = ((p.end - p.start + 1) / span) * 100;
-                const isSelected = p.slug === selected;
-                return (
-                  <div key={p.slug} className="grid grid-cols-[200px_1fr] items-center gap-6">
-                    <button
-                      onClick={() => onSelect(p.slug)}
-                      className={`truncate text-left text-sm transition-colors ${
-                        isSelected ? "text-white" : "text-white/50 hover:text-white"
-                      }`}
-                    >
-                      {p.company}
-                    </button>
-                    <div className="relative h-9">
-                      <div
-                        className="absolute inset-0 grid"
-                        style={{ gridTemplateColumns: `repeat(${span}, minmax(0, 1fr))` }}
-                      >
-                        {years.map((y) => (
-                          <div key={y} className="border-l border-white/5" />
-                        ))}
-                      </div>
-                      <motion.button
-                        onClick={() => onSelect(p.slug)}
-                        initial={{ scaleX: 0, opacity: 0 }}
-                        whileInView={{ scaleX: 1, opacity: 1 }}
-                        viewport={{ once: true, margin: "-40px" }}
-                        transition={{ duration: 0.9, delay: 0.1 + i * 0.08, ease }}
-                        className="group absolute inset-y-1 origin-left overflow-hidden rounded-lg border text-left transition-shadow"
-                        style={{
-                          left: `${left}%`,
-                          width: `calc(${width}% - 6px)`,
-                          borderColor: isSelected ? p.accent : `${p.accent}55`,
-                          background: `linear-gradient(90deg, ${p.accent}${isSelected ? "60" : "30"}, ${p.accent}10)`,
-                          boxShadow: isSelected ? `0 0 24px -4px ${p.accent}80` : undefined,
-                        }}
-                        aria-label={`${p.company}, ${p.role}, ${p.period}`}
-                        aria-pressed={isSelected}
-                      >
-                        <span className="relative flex h-full items-center gap-2 px-3">
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ background: p.accent }} />
-                          <span className="truncate text-xs font-medium text-white">{p.period}</span>
-                        </span>
-                      </motion.button>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      ))}
-    </Reveal>
+        <button
+          onClick={() => openProject(project.slug)}
+          className="relative mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/15 px-4 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/5 active:scale-[0.97]"
+        >
+          Read the case study
+          <ArrowUpRight className="size-4 transition-transform group-hover:rotate-45" />
+        </button>
+      </article>
+    </motion.li>
   );
 }
 
 export function Experience() {
-  const [selected, setSelected] = useState(latestSlug);
-  const [expanded, setExpanded] = useState<string | null>(latestSlug);
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const index = roles.findIndex((p) => p.slug === selected);
-  const current = roles[index];
-  const next = roles[(index + 1) % roles.length];
+  const [filter, setFilter] = useState<(typeof filters)[number]["id"]>("all");
+  const [activeChapter, setActiveChapter] = useState(chapters[0].id);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: timelineRef, offset: ["start 75%", "end 60%"] });
+  const fill = useSpring(scrollYProgress, { stiffness: 120, damping: 28 });
 
-  function onTabKey(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    e.preventDefault();
-    const delta = e.key === "ArrowDown" ? 1 : -1;
-    const target = roles[(index + delta + roles.length) % roles.length];
-    setSelected(target.slug);
-    tabRefs.current[target.slug]?.focus();
-  }
+  const groups = chapters
+    .map((c) => ({
+      ...c,
+      roles: c.slugs.map((s) => bySlug.get(s)!).filter((p) => filter === "all" || p.track === filter),
+    }))
+    .filter((c) => c.roles.length > 0);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActiveChapter(entry.target.getAttribute("data-chapter")!);
+        }
+      },
+      { rootMargin: "-35% 0px -60% 0px" },
+    );
+    timelineRef.current?.querySelectorAll("[data-chapter]").forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [filter]);
 
   return (
-    <section id="experience" className="relative scroll-mt-20 border-t border-white/5 py-20 sm:py-28 lg:py-36">
-      <div className="mx-auto max-w-7xl px-5 sm:px-6">
-        <SectionHeading
-          eyebrow="Experience"
-          title="Seven products, six+ years,"
-          accent="from WordPress to Frontend Lead."
-          description="Every role I've held — what I owned, what I shipped and the stack I used to ship it."
-        />
+    <section id="experience" className="section-pad relative border-t border-white/5">
+      <div className="container-x grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <SectionHeading
+            index="01"
+            eyebrow="Experience"
+            title="Seven products, six+ years,"
+            accent="from WordPress to Frontend Lead."
+            description="Straight from my resume — every role, what I owned, and the stack I shipped it with."
+            className="mb-8"
+          />
 
-        <CareerChart selected={selected} onSelect={setSelected} />
-
-        <Reveal className="hidden overflow-hidden rounded-3xl border border-white/[0.07] bg-ink-900 md:grid md:grid-cols-[260px_1fr] lg:grid-cols-[320px_1fr]">
-          <div
-            role="tablist"
-            aria-label="Roles"
-            aria-orientation="vertical"
-            onKeyDown={onTabKey}
-            className="border-r border-white/[0.07] p-3"
-          >
-            {roles.map((p) => {
-              const isActive = p.slug === selected;
+          <Reveal className="flex w-full gap-1 rounded-full border border-white/10 bg-white/[0.02] p-1 sm:w-auto sm:inline-flex">
+            {filters.map((f) => {
+              const count = f.id === "all" ? projects.length : projects.filter((p) => p.track === f.id).length;
+              const active = filter === f.id;
               return (
                 <button
-                  key={p.slug}
-                  ref={(el) => {
-                    tabRefs.current[p.slug] = el;
-                  }}
-                  role="tab"
-                  id={`role-tab-${p.slug}`}
-                  aria-selected={isActive}
-                  aria-controls="role-panel"
-                  tabIndex={isActive ? 0 : -1}
-                  onClick={() => setSelected(p.slug)}
-                  className="relative block w-full rounded-2xl px-4 py-3.5 text-left"
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
+                  aria-pressed={active}
+                  className={`relative min-h-10 flex-1 rounded-full px-4 text-sm transition-colors sm:flex-none ${
+                    active ? "text-black" : "text-white/55 hover:text-white"
+                  }`}
                 >
-                  {isActive && (
+                  {active && (
                     <motion.span
-                      layoutId="role-tab"
-                      className="absolute inset-0 rounded-2xl bg-white/[0.06]"
-                      transition={{ type: "spring", stiffness: 380, damping: 34 }}
-                    >
-                      <span className="absolute inset-y-3 left-0 w-0.5 rounded-full" style={{ background: p.accent }} />
-                    </motion.span>
+                      layoutId="exp-filter"
+                      className="absolute inset-0 rounded-full bg-accent"
+                      transition={{ type: "spring", stiffness: 400, damping: 34 }}
+                    />
                   )}
-                  <span className="relative block font-mono text-[11px] text-white/35">{p.period}</span>
-                  <span
-                    className={`relative mt-0.5 block truncate font-medium transition-colors ${
-                      isActive ? "text-white" : "text-white/60"
-                    }`}
-                  >
-                    {p.company}
+                  <span className="relative">
+                    {f.label} <span className={active ? "text-black/50" : "text-white/30"}>{count}</span>
                   </span>
-                  <span className="relative block truncate text-xs text-white/40">{p.role}</span>
                 </button>
               );
             })}
-          </div>
+          </Reveal>
 
-          <div
-            id="role-panel"
-            role="tabpanel"
-            aria-labelledby={`role-tab-${current.slug}`}
-            className="relative min-h-[560px] overflow-hidden p-8 lg:p-10"
-          >
-            <div
-              className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full opacity-20 blur-3xl transition-colors duration-700"
-              style={{ background: current.accent }}
-            />
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current.slug}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.35, ease }}
-                className="relative"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-xs text-white/45">{current.period}</span>
-                  <TrackBadge project={current} />
-                  {current.slug === latestSlug && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent">
-                      <span className="size-1.5 animate-pulse rounded-full bg-accent" /> Latest
-                    </span>
-                  )}
-                </div>
-                <h3 className="mt-4 text-3xl font-semibold tracking-tight text-white lg:text-4xl">{current.role}</h3>
-                <p className="mt-1 font-serif text-2xl italic" style={{ color: current.accent }}>
-                  @ {current.company}
-                </p>
-                <div className="mt-6">
-                  <RoleDetails project={current} />
-                </div>
-                <button
-                  onClick={() => setSelected(next.slug)}
-                  className="group mt-8 flex items-center gap-2 text-sm text-white/40 transition-colors hover:text-white"
+          <Reveal delay={0.1} className="mt-8 hidden space-y-1 lg:block">
+            {groups.map((c) => {
+              const active = activeChapter === c.id;
+              return (
+                <a
+                  key={c.id}
+                  href={`#chapter-${c.id}`}
+                  className={`group flex items-center gap-4 rounded-2xl px-4 py-3 transition-colors ${
+                    active ? "bg-white/[0.05]" : "hover:bg-white/[0.03]"
+                  }`}
                 >
-                  Next role: <span className="text-white/70 group-hover:text-white">{next.company}</span>
-                  <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
-                </button>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </Reveal>
+                  <span
+                    className={`h-px transition-all duration-500 ${active ? "w-10 bg-accent" : "w-5 bg-white/20"}`}
+                  />
+                  <span className="min-w-0">
+                    <span className={`block font-mono text-[11px] ${active ? "text-accent" : "text-white/35"}`}>
+                      {c.years}
+                    </span>
+                    <span className={`block font-medium ${active ? "text-white" : "text-white/50"}`}>{c.title}</span>
+                  </span>
+                  <span className="ml-auto font-mono text-xs text-white/30">{c.roles.length}</span>
+                </a>
+              );
+            })}
+          </Reveal>
 
-        <ol className="space-y-3 md:hidden">
-          {roles.map((p) => {
-            const isOpen = expanded === p.slug;
-            return (
-              <li key={p.slug}>
-                <Reveal y={16}>
-                  <div
-                    className={`relative overflow-hidden rounded-2xl border bg-ink-900 transition-colors ${
-                      isOpen ? "border-white/15" : "border-white/[0.07]"
-                    }`}
-                  >
-                    <span className="absolute inset-y-0 left-0 w-0.5" style={{ background: p.accent }} />
-                    <button
-                      onClick={() => setExpanded(isOpen ? null : p.slug)}
-                      aria-expanded={isOpen}
-                      aria-controls={`role-${p.slug}`}
-                      className="flex w-full items-center gap-3 p-4 text-left active:bg-white/[0.03]"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-[11px] text-white/40">{p.period}</span>
-                          <TrackBadge project={p} />
-                          {p.slug === latestSlug && (
-                            <span className="font-mono text-[10px] uppercase tracking-wider text-accent">● Latest</span>
-                          )}
-                        </div>
-                        <div className="mt-1.5 font-semibold text-white">{p.company}</div>
-                        <div className="text-sm text-white/50">{p.role}</div>
-                      </div>
-                      <motion.span
-                        animate={{ rotate: isOpen ? 180 : 0 }}
-                        transition={{ duration: 0.3, ease }}
-                        className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/60"
-                      >
-                        <ChevronDown className="size-4" />
-                      </motion.span>
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {isOpen && (
-                        <motion.div
-                          id={`role-${p.slug}`}
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.35, ease }}
-                          className="overflow-hidden"
-                        >
-                          <div className="border-t border-white/5 px-4 pb-5 pt-4">
-                            <RoleDetails project={p} compact />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </Reveal>
-              </li>
-            );
-          })}
-        </ol>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {chapters.map((c, i) => (
-            <Reveal
-              key={c.title}
-              delay={i * 0.08}
-              className="rounded-3xl border border-white/[0.07] bg-ink-900 p-6 lg:p-7"
+          <Reveal delay={0.15} className="mt-8 hidden lg:block">
+            <a
+              href={profile.resume}
+              download
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-medium text-black transition-colors hover:bg-accent"
             >
-              <div className="font-mono text-xs text-accent">{c.years}</div>
-              <h3 className="mt-3 text-xl font-semibold text-white">{c.title}</h3>
-              <p className="mt-2 leading-relaxed text-white/50">{c.body}</p>
-            </Reveal>
-          ))}
+              <Download className="size-4" /> Download full resume
+            </a>
+          </Reveal>
         </div>
 
-        <Reveal className="mt-4 flex items-center gap-4 rounded-3xl border border-white/[0.07] bg-ink-900 p-5 sm:p-6">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white">
-            <GraduationCap className="size-[18px]" />
-          </span>
-          <div className="min-w-0">
-            <div className="font-medium text-white">
-              {profile.education.degree} · {profile.education.school}
+        <div ref={timelineRef} className="relative min-w-0">
+          <div aria-hidden className="absolute bottom-0 left-[11px] top-2 w-px bg-white/10 sm:left-[17px]">
+            <motion.div className="h-full w-full origin-top bg-linear-to-b from-accent via-accent to-accent/0" style={{ scaleY: fill }} />
+          </div>
+
+          <div className="space-y-12 sm:space-y-16">
+            {groups.map((c) => (
+              <div key={c.id} id={`chapter-${c.id}`} data-chapter={c.id} className="scroll-mt-28">
+                <Reveal className="relative pl-9 sm:pl-12">
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-1 flex size-6 items-center justify-center rounded-full border border-white/15 bg-background sm:left-1.5"
+                  >
+                    <span className="size-1.5 rounded-full bg-white/50" />
+                  </span>
+                  <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">{c.years}</p>
+                  <h3 className="mt-1.5 text-2xl font-semibold tracking-tight text-white">{c.title}</h3>
+                  <p className="mt-2 max-w-xl text-pretty text-sm leading-relaxed text-white/50 sm:text-base">{c.body}</p>
+                </Reveal>
+                <motion.ol layout className="mt-6 space-y-4 sm:space-y-5">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {c.roles.map((p) => (
+                      <RoleCard key={p.slug} project={p} current={p.slug === profile.current.slug} />
+                    ))}
+                  </AnimatePresence>
+                </motion.ol>
+              </div>
+            ))}
+
+            <div className="grid gap-4 pl-9 sm:grid-cols-2 sm:pl-12">
+              <Reveal className="surface flex items-start gap-4 p-5 sm:p-6">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white">
+                  <GraduationCap className="size-[18px]" />
+                </span>
+                <div className="min-w-0">
+                  <div className="font-medium text-white">
+                    {profile.education.degree} · {profile.education.school}
+                  </div>
+                  <div className="mt-0.5 text-sm text-white/45">
+                    {profile.education.college} · {profile.education.year} · {profile.education.score}
+                  </div>
+                </div>
+              </Reveal>
+              <Reveal delay={0.06} className="surface flex items-start gap-4 p-5 sm:p-6">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white">
+                  <Languages className="size-[18px]" />
+                </span>
+                <div className="min-w-0">
+                  <div className="font-medium text-white">Languages</div>
+                  <div className="mt-0.5 text-sm text-white/45">{profile.languages.join(" · ")}</div>
+                </div>
+              </Reveal>
             </div>
-            <div className="text-sm text-white/45">
-              {profile.education.college} · {profile.education.year} · {profile.education.score}
+
+            <div className="pl-9 sm:pl-12 lg:hidden">
+              <a
+                href={profile.resume}
+                download
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-medium text-black transition-colors hover:bg-accent sm:inline-flex sm:w-auto"
+              >
+                <Download className="size-4" /> Download full resume
+              </a>
             </div>
           </div>
-        </Reveal>
+        </div>
       </div>
     </section>
   );

@@ -7,7 +7,6 @@ import { Nav } from "@/components/nav";
 import { Process } from "@/components/process";
 import { ProjectDrawer } from "@/components/project-drawer";
 import { Skills } from "@/components/skills";
-import { Stats } from "@/components/stats";
 import { Toast } from "@/components/toast";
 import { UIProvider } from "@/components/ui-provider";
 import { Work } from "@/components/work";
@@ -18,7 +17,6 @@ export default function Home() {
       <Nav />
       <main className="flex-1">
         <Hero />
-        <Stats />
         <Experience />
         <Work />
         <Skills />

@@ -5,12 +5,13 @@ Built with **Next.js 16 (App Router)**, **React 19**, **TypeScript**, **Tailwind
 
 ## Highlights
 
-- **Live product browser** in the hero that cycles through recreated UIs of shipped products (tilt on hover, click to open the case study)
-- **Filterable case studies** with a slide-over drawer (challenge, deliverables, metrics, stack, integrations, keyboard ← → navigation)
-- **Experience section** — clickable career timeline (2018 → today), a role explorer (tabs on desktop, accordion on mobile) with every role's highlights and stack, plus education
-- **Command palette** — press `Ctrl K` / `⌘ K` to jump anywhere, open a case study, copy email or download the CV
-- Bento skills grid, integrations marquee, process section and contact with live Ahmedabad time
-- Respects `prefers-reduced-motion`, fully keyboard accessible, generated Open Graph image
+- **Bento hero** — intro, live product browser, a "Now" card (current role) and a live Ahmedabad clock, plus animated stats
+- **Experience timeline** built from the resume — roles grouped into career chapters, a scroll-progress line, Frontend/Backend filters, expandable highlights and a sticky chapter rail on desktop
+- **Stacking case-study cards** for flagship products (sticky stack on desktop, plain list on phones), plus a compact grid for earlier work, all opening a slide-over drawer
+- **Stack explorer** — tap any technology to see which products it shipped in (matching lives in `projectsUsing()` in `src/data/portfolio.ts`)
+- **Brief builder** contact — pick needs and timeline, get a pre-filled email in one tap
+- **Mobile-first navigation** — full-screen menu sheet, bottom quick-nav dock, and a command palette (`Ctrl K` / `⌘ K`)
+- Fluid type and spacing (`clamp()`), 44px+ touch targets, respects `prefers-reduced-motion`, keyboard accessible, generated Open Graph image
 
 ## Getting started
 

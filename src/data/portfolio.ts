@@ -36,6 +36,7 @@ export const profile = {
   github: "https://github.com/chintanvadi",
   linkedin: "https://linkedin.com/in/chintan-vadi",
   resume: "/Chintan-Vadi-Resume.docx",
+  current: { role: "Frontend Lead Developer", company: "Asset Hero", slug: "asset-hero" },
   summary:
     "Full Stack Developer with 6+ years of experience building scalable web applications, browser extensions, SaaS platforms, dashboards, and API-driven integrations — across the full lifecycle from frontend architecture to production deployment.",
   languages: ["English", "Hindi", "Gujarati"],
@@ -49,10 +50,34 @@ export const profile = {
 };
 
 export const stats = [
-  { value: 2018, label: "Shipping production code since", prefix: "", suffix: "" },
-  { value: 7, label: "Products delivered end-to-end", prefix: "", suffix: "" },
-  { value: 20, label: "Third-party integrations shipped", prefix: "", suffix: "+" },
-  { value: 4, label: "Extension ecosystems mastered", prefix: "", suffix: "" },
+  { value: 6, label: "Years shipping production code", suffix: "+" },
+  { value: 7, label: "Products delivered end-to-end", suffix: "" },
+  { value: 20, label: "Third-party integrations shipped", suffix: "+" },
+  { value: 4, label: "Extension ecosystems mastered", suffix: "" },
+];
+
+export const chapters = [
+  {
+    id: "lead",
+    years: "2025 — Now",
+    slugs: ["asset-hero", "dealerpromoter"],
+    title: "Frontend leadership",
+    body: "Leading the frontend of a multi-tenant SaaS platform — architecture, integrations, GDPR, testing and CI — while shipping MV3 tooling on the side.",
+  },
+  {
+    id: "extensions",
+    years: "2021 — 2024",
+    slugs: ["getmyinvoices", "simplerecruiter"],
+    title: "Extension specialist",
+    body: "Moved to where users actually work: Chrome, Gmail, Thunderbird and Outlook extensions that pull recruiting and invoicing workflows into the browser.",
+  },
+  {
+    id: "backend",
+    years: "2018 — 2021",
+    slugs: ["hotghst", "abey-apay", "smarter-loans"],
+    title: "Backend foundations",
+    body: "WordPress calculators, then Laravel ecosystems for blockchain fintech and agency operations — learning how data, money and permissions really flow.",
+  },
 ];
 
 export const projects: Project[] = [
@@ -299,7 +324,46 @@ export const skillGroups = [
     blurb: "Confidence on every release.",
     items: ["Vitest", "Sentry", "CI/CD", "Automated Testing", "Dependency Scanning", "Webpack", "Chrome Web Store"],
   },
+  {
+    id: "tools",
+    title: "Tools & Libraries",
+    blurb: "The everyday kit behind clean data, auth and UI.",
+    items: ["Axios", "Zod", "shadcn/ui", "React Query", "Spatie Permissions", "DataTables", "Bootstrap", "jQuery", "i18n"],
+  },
 ];
+
+/** Search terms used to find a skill inside project copy, when the label alone won't match. */
+const skillAliases: Record<string, string[]> = {
+  "React.js": ["react"],
+  "JavaScript (ES6+)": ["javascript"],
+  "TanStack Query": ["tanstack query", "react query"],
+  "React Query": ["react query", "tanstack query"],
+  "Chrome MV2 / MV3": ["chrome extension", "manifest v3", "mv3"],
+  "Chrome Side Panel API": ["side panel"],
+  "Thunderbird WebExtensions": ["thunderbird"],
+  "Outlook Add-ins": ["outlook"],
+  "REST API Design": ["rest api"],
+  "API Authentication": ["oauth", "auth"],
+  "Scheduled Jobs": ["scheduled", "artisan"],
+  "Multi-tenant Apps": ["multi-tenant"],
+  RBAC: ["role-based"],
+  "Web Scraping": ["scraping"],
+  "CSV / JSON": ["csv", "json"],
+  "CI/CD": ["ci", "web store"],
+  "Automated Testing": ["vitest"],
+  "Dependency Scanning": ["vulnerability scanning"],
+  "Chrome Web Store": ["chrome web store", "marketplace"],
+  "Spatie Permissions": ["spatie"],
+  i18n: ["i18n", "multilingual"],
+};
+
+export function projectsUsing(skill: string): Project[] {
+  const terms = skillAliases[skill] ?? [skill.toLowerCase()];
+  return projects.filter((p) => {
+    const haystack = [...p.tech, ...p.integrations, ...p.highlights, p.summary].join(" · ").toLowerCase();
+    return terms.some((t) => new RegExp(`(^|[^a-z])${t.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}s?([^a-z]|$)`).test(haystack));
+  });
+}
 
 export const integrationLogos = [
   "Xero",

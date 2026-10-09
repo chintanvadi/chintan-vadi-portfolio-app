@@ -1,28 +1,31 @@
 "use client";
 
-import { animate, useInView } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { animate, useInView, useReducedMotion } from "motion/react";
+import { useEffect, useRef } from "react";
 import { stats } from "@/data/portfolio";
 import { Reveal } from "./reveal";
 
-function Counter({ to, suffix, from }: { to: number; suffix: string; from: number }) {
+function Counter({ to, suffix }: { to: number; suffix: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  const [value, setValue] = useState(from);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const reduce = useReducedMotion();
 
   useEffect(() => {
-    if (!inView) return;
-    const controls = animate(from, to, {
-      duration: 1.6,
+    const el = ref.current;
+    if (!el || !inView || reduce) return;
+    const controls = animate(0, to, {
+      duration: 1.4,
       ease: [0.22, 1, 0.36, 1],
-      onUpdate: (v) => setValue(Math.round(v)),
+      onUpdate: (v) => {
+        el.textContent = `${Math.round(v)}${suffix}`;
+      },
     });
     return () => controls.stop();
-  }, [inView, from, to]);
+  }, [inView, reduce, to, suffix]);
 
   return (
     <span ref={ref} className="tabular-nums">
-      {value}
+      {to}
       {suffix}
     </span>
   );
@@ -30,23 +33,15 @@ function Counter({ to, suffix, from }: { to: number; suffix: string; from: numbe
 
 export function Stats() {
   return (
-    <section aria-label="Highlights" className="border-y border-white/5 bg-white/[0.015]">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 lg:grid-cols-4">
-        {stats.map((s, i) => (
-          <Reveal
-            key={s.label}
-            delay={i * 0.08}
-            className={`px-5 py-8 sm:px-6 sm:py-12 ${i % 2 === 1 ? "border-l border-white/5" : ""} ${
-              i >= 2 ? "border-t border-white/5 lg:border-t-0" : ""
-            } ${i === 2 ? "lg:border-l" : ""}`}
-          >
-            <div className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-              <Counter to={s.value} suffix={s.suffix} from={s.value > 1000 ? s.value - 40 : 0} />
-            </div>
-            <p className="mt-2 text-xs leading-snug text-white/45 sm:text-sm">{s.label}</p>
-          </Reveal>
-        ))}
-      </div>
-    </section>
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4" aria-label="Highlights">
+      {stats.map((s, i) => (
+        <Reveal key={s.label} delay={0.1 + i * 0.06} y={16} className="surface px-5 py-5 sm:px-6 sm:py-6">
+          <div className="text-[clamp(1.75rem,5vw,2.75rem)] font-semibold leading-none tracking-tight text-white">
+            <Counter to={s.value} suffix={s.suffix} />
+          </div>
+          <p className="mt-2 text-xs leading-snug text-white/45 sm:text-sm">{s.label}</p>
+        </Reveal>
+      ))}
+    </div>
   );
 }
