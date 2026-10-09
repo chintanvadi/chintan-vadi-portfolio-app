@@ -7,7 +7,7 @@ import { useUI } from "./ui-provider";
 export function Toast() {
   const { toast } = useUI();
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[70] flex justify-center px-4" aria-live="polite">
+    <div className="pointer-events-none fixed inset-x-0 bottom-28 z-[70] md:bottom-6 flex justify-center px-4" aria-live="polite">
       <AnimatePresence>
         {toast && (
           <motion.div

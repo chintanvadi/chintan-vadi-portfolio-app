@@ -1,24 +1,35 @@
 "use client";
 
-import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform, type PanInfo } from "motion/react";
 import { ArrowUpRight, Lock, RotateCw } from "lucide-react";
 import { useEffect, useState, type PointerEvent } from "react";
 import { projects } from "@/data/portfolio";
 import { ProductPreview } from "./product-preview";
+import { ScaledFrame } from "./scaled-frame";
 import { useUI } from "./ui-provider";
 
 const featured = projects.filter((p) => p.featured);
 const CYCLE_MS = 4500;
+const SWIPE_THRESHOLD = 50;
 
 export function BrowserMock() {
   const { openProject } = useUI();
   const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
   const [paused, setPaused] = useState(false);
   const project = featured[index];
 
+  const go = (next: number) => {
+    setDirection(next > index || (index === featured.length - 1 && next === 0) ? 1 : -1);
+    setIndex((next + featured.length) % featured.length);
+  };
+
   useEffect(() => {
     if (paused) return;
-    const id = window.setTimeout(() => setIndex((i) => (i + 1) % featured.length), CYCLE_MS);
+    const id = window.setTimeout(() => {
+      setDirection(1);
+      setIndex((i) => (i + 1) % featured.length);
+    }, CYCLE_MS);
     return () => window.clearTimeout(id);
   }, [index, paused]);
 
@@ -28,16 +39,22 @@ export function BrowserMock() {
   const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-8, 8]), { stiffness: 120, damping: 18 });
 
   function handleMove(e: PointerEvent<HTMLDivElement>) {
+    if (e.pointerType !== "mouse") return;
     const rect = e.currentTarget.getBoundingClientRect();
     mx.set((e.clientX - rect.left) / rect.width - 0.5);
     my.set((e.clientY - rect.top) / rect.height - 0.5);
+  }
+
+  function handleSwipe(_: unknown, info: PanInfo) {
+    if (info.offset.x < -SWIPE_THRESHOLD) go(index + 1);
+    else if (info.offset.x > SWIPE_THRESHOLD) go(index - 1);
   }
 
   return (
     <div
       className="relative [perspective:1400px]"
       onPointerMove={handleMove}
-      onPointerEnter={() => setPaused(true)}
+      onPointerEnter={(e) => e.pointerType === "mouse" && setPaused(true)}
       onPointerLeave={() => {
         setPaused(false);
         mx.set(0);
@@ -52,16 +69,16 @@ export function BrowserMock() {
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-ink-900/90 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.8)] backdrop-blur"
       >
-        <div className="flex items-center gap-3 border-b border-white/5 bg-white/[0.02] px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-white/5 bg-white/[0.02] px-3 py-2.5 sm:px-4 sm:py-3">
           <div className="flex gap-1.5">
             <span className="size-2.5 rounded-full bg-[#ff5f57]" />
             <span className="size-2.5 rounded-full bg-[#febc2e]" />
             <span className="size-2.5 rounded-full bg-[#28c840]" />
           </div>
-          <RotateCw className="size-3 text-white/30" />
+          <RotateCw className="hidden size-3 text-white/30 sm:block" />
           <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md bg-white/5 px-3 py-1 font-mono text-[10px] text-white/50">
             <Lock className="size-2.5 shrink-0" />
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.span
                 key={project.slug}
                 initial={{ opacity: 0, y: 4 }}
@@ -82,12 +99,12 @@ export function BrowserMock() {
               key={p.slug}
               role="tab"
               aria-selected={i === index}
-              onClick={() => setIndex(i)}
-              className={`relative flex-1 px-2 py-2 text-[10px] font-medium transition-colors sm:text-[11px] ${
+              onClick={() => go(i)}
+              className={`relative min-w-0 flex-1 px-1.5 py-2.5 text-[10px] font-medium transition-colors sm:px-2 sm:text-[11px] ${
                 i === index ? "text-white" : "text-white/35 hover:text-white/70"
               }`}
             >
-              <span className="truncate">{p.company.split(" /")[0]}</span>
+              <span className="block truncate">{p.company.split(" /")[0]}</span>
               <span className="absolute inset-x-0 bottom-0 h-px bg-white/5">
                 {i === index && (
                   <motion.span
@@ -104,32 +121,55 @@ export function BrowserMock() {
           ))}
         </div>
 
-        <div className="relative aspect-[16/10]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={project.slug}
-              initial={{ opacity: 0, scale: 0.98, filter: "blur(6px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 1.01, filter: "blur(6px)" }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0"
-            >
-              <ProductPreview kind={project.preview} accent={project.accent} />
-            </motion.div>
-          </AnimatePresence>
-        </div>
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.25}
+          dragSnapToOrigin
+          onDragStart={() => setPaused(true)}
+          onDragEnd={(e, info) => {
+            handleSwipe(e, info);
+            setPaused(false);
+          }}
+          className="cursor-grab active:cursor-grabbing"
+        >
+          <ScaledFrame ratio={16 / 10}>
+            <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+              <motion.div
+                key={project.slug}
+                custom={direction}
+                variants={{
+                  enter: (d: number) => ({ opacity: 0, x: d * 60, filter: "blur(6px)" }),
+                  center: { opacity: 1, x: 0, filter: "blur(0px)" },
+                  exit: (d: number) => ({ opacity: 0, x: d * -60, filter: "blur(6px)" }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0"
+              >
+                <ProductPreview kind={project.preview} accent={project.accent} />
+              </motion.div>
+            </AnimatePresence>
+          </ScaledFrame>
+        </motion.div>
       </motion.div>
 
       <motion.button
         onClick={() => openProject(project.slug)}
-        className="group absolute -bottom-5 left-6 flex items-center gap-2 rounded-full border border-white/10 bg-ink-800/95 py-2 pl-2 pr-4 text-xs text-white shadow-xl backdrop-blur transition-colors hover:border-white/25"
+        className="group absolute -bottom-5 left-4 flex max-w-[calc(100%-2rem)] items-center gap-2 rounded-full border border-white/10 bg-ink-800/95 py-2 pl-2 pr-4 text-xs text-white shadow-xl backdrop-blur transition-colors hover:border-white/25 sm:left-6"
         whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.97 }}
       >
-        <span className="flex size-6 items-center justify-center rounded-full text-black" style={{ background: project.accent }}>
+        <span
+          className="flex size-6 shrink-0 items-center justify-center rounded-full text-black"
+          style={{ background: project.accent }}
+        >
           <ArrowUpRight className="size-3.5 transition-transform group-hover:rotate-45" />
         </span>
-        <span>
-          <span className="text-white/50">{project.role.split(" (")[0]} · </span>
+        <span className="truncate">
+          <span className="text-white/50">View case study · </span>
           {project.company}
         </span>
       </motion.button>

@@ -45,38 +45,38 @@ export function Contact() {
   }
 
   return (
-    <section id="contact" className="relative scroll-mt-24 overflow-hidden border-t border-white/5 py-28 sm:py-40">
+    <section id="contact" className="relative scroll-mt-20 overflow-hidden border-t border-white/5 py-20 sm:py-32 lg:py-40">
       <div className="absolute bottom-0 left-1/2 -z-10 h-[420px] w-[900px] -translate-x-1/2 translate-y-1/2 rounded-full bg-accent/15 blur-[140px]" />
       <div className="bg-grid mask-fade-b absolute inset-0 -z-10 rotate-180" />
 
-      <div className="mx-auto max-w-5xl px-6 text-center">
+      <div className="mx-auto max-w-5xl px-5 text-center sm:px-6">
         <Reveal>
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-accent">Contact</p>
-          <h2 className="mt-6 text-5xl font-semibold leading-[1.02] tracking-tight text-white sm:text-7xl md:text-8xl">
+          <h2 className="mt-5 text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-white sm:mt-6 sm:text-7xl md:text-8xl">
             Have a product
             <br />
             <span className="font-serif font-normal italic text-white/70">that needs to ship?</span>
           </h2>
-          <p className="mx-auto mt-8 max-w-xl text-lg text-white/55">
+          <p className="mx-auto mt-6 max-w-xl text-base text-white/55 sm:mt-8 sm:text-lg">
             I&apos;m open to frontend lead, full-stack and browser-extension roles — remote or in Ahmedabad. Tell me
             what you&apos;re building.
           </p>
         </Reveal>
 
-        <Reveal delay={0.1} className="mt-12 flex flex-col items-center gap-4">
-          <div className="flex flex-wrap items-center justify-center gap-3">
+        <Reveal delay={0.1} className="mt-10 flex flex-col items-center gap-4 sm:mt-12">
+          <div className="flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row sm:items-center">
             <motion.a
               href={`mailto:${profile.email}`}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center gap-2.5 rounded-full bg-accent px-7 py-4 text-base font-semibold text-black"
+              className="inline-flex items-center justify-center gap-2.5 rounded-full bg-accent px-7 py-4 text-base font-semibold text-black"
             >
               <Mail className="size-4.5" />
               Start a conversation
             </motion.a>
             <button
               onClick={copyEmail}
-              className="group inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.03] px-6 py-4 font-mono text-sm text-white/80 transition-colors hover:border-white/40"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full border border-white/15 bg-white/[0.03] px-6 py-4 font-mono text-[13px] active:scale-[0.98] sm:text-sm text-white/80 transition-colors hover:border-white/40"
               aria-label="Copy email address"
             >
               {profile.email}

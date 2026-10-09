@@ -350,8 +350,8 @@ export const workProcess = [
 ];
 
 export const sections = [
+  { id: "experience", label: "Experience" },
   { id: "work", label: "Work" },
-  { id: "journey", label: "Journey" },
   { id: "skills", label: "Skills" },
   { id: "process", label: "Process" },
   { id: "contact", label: "Contact" },

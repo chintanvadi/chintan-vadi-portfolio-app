@@ -16,7 +16,7 @@ function Dashboard({ accent }: { accent: string }) {
   const bars = [42, 58, 36, 72, 64, 88, 54, 76, 92, 68, 80, 96];
   return (
     <div className="flex h-full">
-      <aside className="hidden w-[22%] flex-col gap-2 border-r border-white/5 p-3 sm:flex">
+      <aside className="flex w-[22%] flex-col gap-2 border-r border-white/5 p-3">
         <div className="mb-2 flex items-center gap-1.5">
           <div className="size-3 rounded" style={{ background: accent }} />
           <Line w="60%" />

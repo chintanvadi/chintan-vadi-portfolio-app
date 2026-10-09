@@ -36,14 +36,14 @@ export function Stats() {
           <Reveal
             key={s.label}
             delay={i * 0.08}
-            className={`px-6 py-10 sm:py-12 ${i % 2 === 1 ? "border-l border-white/5" : ""} ${
+            className={`px-5 py-8 sm:px-6 sm:py-12 ${i % 2 === 1 ? "border-l border-white/5" : ""} ${
               i >= 2 ? "border-t border-white/5 lg:border-t-0" : ""
             } ${i === 2 ? "lg:border-l" : ""}`}
           >
-            <div className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+            <div className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
               <Counter to={s.value} suffix={s.suffix} from={s.value > 1000 ? s.value - 40 : 0} />
             </div>
-            <p className="mt-2 text-sm text-white/45">{s.label}</p>
+            <p className="mt-2 text-xs leading-snug text-white/45 sm:text-sm">{s.label}</p>
           </Reveal>
         ))}
       </div>

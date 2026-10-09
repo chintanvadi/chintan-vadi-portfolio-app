@@ -1,8 +1,8 @@
 import { CommandPalette } from "@/components/command-palette";
 import { Contact } from "@/components/contact";
+import { Experience } from "@/components/experience";
 import { Footer } from "@/components/footer";
 import { Hero } from "@/components/hero";
-import { Journey } from "@/components/journey";
 import { Nav } from "@/components/nav";
 import { Process } from "@/components/process";
 import { ProjectDrawer } from "@/components/project-drawer";
@@ -19,8 +19,8 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
         <Stats />
+        <Experience />
         <Work />
-        <Journey />
         <Skills />
         <Process />
         <Contact />

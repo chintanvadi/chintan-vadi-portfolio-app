@@ -131,7 +131,7 @@ function PaletteDialog() {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-[12vh]"
+      className="fixed inset-0 z-[60] flex items-start justify-center px-3 pt-[10vh] sm:px-4 sm:pt-[12vh]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
